@@ -23,7 +23,7 @@ def gql_request(query, variables=None, token=None):
 
 def fetch_external_snapshot():
     """
-    Returns dict keyed by team_id (slug), for WHITELIST_TEAMS only:
+    Returns dict keyed by team_id (slug), for ALLOWLIST_TEAMS only:
       team_id -> { "display_name": str, "description": str, "service_count": int }
     """
     print(f"--- Fetching GraphQL from {config.GRAPHQL_URL} ---")
@@ -46,10 +46,10 @@ def fetch_external_snapshot():
 
 
 # ───────────────────────── Notion Helpers ───────────────────────
-def paginate_db(notion_client, database_id, **kwargs):
+def paginate_db(notion, database_id, **kwargs):
     cursor = None
     while True:
-        resp = notion_client.databases.query(
+        resp = notion.databases.query(
             database_id=database_id,
             start_cursor=cursor,
             page_size=config.PAGE_SIZE,
@@ -82,18 +82,18 @@ def relation_ids(prop):
     )
 
 
-def set_relation(notion_client, page_id, prop_name, ids):
-    notion_client.pages.update(
+def set_relation(notion, page_id, prop_name, ids):
+    notion.pages.update(
         page_id=page_id, properties={prop_name: {"relation": [{"id": i} for i in ids]}}
     )
 
 
-def update_props(notion_client, page_id, props):
-    notion_client.pages.update(page_id=page_id, properties=props)
+def update_props(notion, page_id, props):
+    notion.pages.update(page_id=page_id, properties=props)
 
 
 def create_service_page(
-    notion_client,
+    notion,
     ext_customer_id,
     name,
     description,
@@ -112,13 +112,13 @@ def create_service_page(
         props[config.PROP_SERVICE_CUSTOMER_REL] = {
             "relation": [{"id": customer_page_id}]
         }
-    return notion_client.pages.create(
+    return notion.pages.create(
         parent={"database_id": config.SERVICES_DB_ID}, properties=props
     )
 
 
-def update_customer_last_updated(notion_client, customer_page_id):
-    notion_client.pages.update(
+def update_customer_last_updated(notion, customer_page_id):
+    notion.pages.update(
         page_id=customer_page_id,
         properties={
             config.PROP_CUSTOMER_LAST_UPDATED: {
@@ -128,5 +128,5 @@ def update_customer_last_updated(notion_client, customer_page_id):
     )
 
 
-def archive_page(notion_client, page_id):
-    notion_client.pages.update(page_id=page_id, archived=True)
+def archive_page(notion, page_id):
+    notion.pages.update(page_id=page_id, archived=True)

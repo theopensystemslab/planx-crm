@@ -69,5 +69,5 @@ To run this locally you'll need a populated `.env` file (see `.env.example`). Va
 Once you've activated the virtual environment and installed the necessary dependencies (see above), you can run the following in your terminal -
 
 ```bash
-uv run --env-file .env python src/sync-planx-services/sync.py
+uv run src/sync-planx-services/main.py
 ```

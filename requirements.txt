@@ -1,2 +1,4 @@
-notion-client
+notion-client==2.5.0
 requests
+ruff
+python-dotenv

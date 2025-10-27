@@ -77,7 +77,7 @@ These values are maintained in `config.py` or via repository secrets
 | `NOTION_TOKEN` | Integration secret (entered at runtime via GHA secrets) |
 | `COUNCILS_DB_ID` | Notion database ID for Councils |
 | `SERVICES_DB_ID` | Notion database ID for PlanX Live Services |
-| `WHITELIST_TEAMS` | List of council slugs to sync |
+| `ALLOWLIST_TEAMS` | List of council slugs to sync |
 | `ARCHIVE_MISSING_SERVICE_PAGES` | If true, archives missing pages |
 | `GENTLE_DELAY_SECONDS` | Delay between Notion API writes |
 

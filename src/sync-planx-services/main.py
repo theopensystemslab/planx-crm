@@ -3,9 +3,12 @@ import sys
 import time
 import logging
 from notion_client import Client
+from dotenv import load_dotenv
 
 import config
 import api_helpers as api
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -14,12 +17,12 @@ log = logging.getLogger(__name__)
 
 
 # ───────────────────────── Load Notion state ─────────────────────
-def load_councils_by_ext(notion_client):
+def load_councils_by_ext(notion):
     """
     Return ext -> council_id for councils that already have ExternalCustomerID set
     """
     by_ext = {}
-    for c in api.paginate_db(notion_client, config.COUNCILS_DB_ID):
+    for c in api.paginate_db(notion, config.COUNCILS_DB_ID):
         props = c["properties"]
         ext = api.text_val(props.get(config.PROP_CUSTOMER_EXT_ID, {}))
         if ext:
@@ -28,12 +31,12 @@ def load_councils_by_ext(notion_client):
     return by_ext
 
 
-def load_services_index(notion_client):
+def load_services_index(notion):
     """
     ext_cust_id -> current service page snapshot (assumes one snapshot page per team)
     """
     idx = {}
-    for s in api.paginate_db(notion_client, config.SERVICES_DB_ID):
+    for s in api.paginate_db(notion, config.SERVICES_DB_ID):
         p = s["properties"]
         ext_id = api.text_val(p.get(config.PROP_SERVICE_EXT_ID, {})) or ""
         if not ext_id:
@@ -52,14 +55,14 @@ def load_services_index(notion_client):
 
 
 # ───────────────────────── Main sync ─────────────────────────────
-def main_sync(notion_client):
+def main_sync(notion):
     """
     Runs the main data synchronization logic.
     """
     external = api.fetch_external_snapshot()
 
-    councils_by_ext = load_councils_by_ext(notion_client)
-    services_index = load_services_index(notion_client)
+    councils_by_ext = load_councils_by_ext(notion)
+    services_index = load_services_index(notion)
 
     to_create_services, to_update_services, to_relink, to_archive = [], [], [], []
     customers_changed = set()  # Councils to stamp 'Integration Last Updated'
@@ -124,29 +127,29 @@ def main_sync(notion_client):
     # --- Apply changes ---
     for slug, name, desc, svc_count, cid in to_create_services:
         api.create_service_page(
-            notion_client, slug, name, desc, svc_count, customer_page_id=cid
+            notion, slug, name, desc, svc_count, customer_page_id=cid
         )
         time.sleep(config.GENTLE_DELAY_SECONDS)
 
     for page_id, props in to_update_services:
-        api.update_props(notion_client, page_id, props)
+        api.update_props(notion, page_id, props)
         time.sleep(config.GENTLE_DELAY_SECONDS)
 
     for page_id, rel_ids in to_relink:
         api.set_relation(
-            notion_client, page_id, config.PROP_SERVICE_CUSTOMER_REL, rel_ids
+            notion, page_id, config.PROP_SERVICE_CUSTOMER_REL, rel_ids
         )
         time.sleep(config.GENTLE_DELAY_SECONDS)
 
     for page_id, prev_rel in to_archive:
-        api.archive_page(notion_client, page_id)
+        api.archive_page(notion, page_id)
         time.sleep(config.GENTLE_DELAY_SECONDS)
 
     # Stamp 'Integration Last Updated'
     log.info(f"Stamping 'Last Updated' for {len(customers_changed)} councils...")
     for cid in customers_changed:
         try:
-            api.update_customer_last_updated(notion_client, cid)
+            api.update_customer_last_updated(notion, cid)
             log.info(f"  ↳ Last Updated set for council {cid}")
         except Exception as e:
             log.warning(f"  ⚠️ Failed to update Last Updated for {cid}: {e}")
