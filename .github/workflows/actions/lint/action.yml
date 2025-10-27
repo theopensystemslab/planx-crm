@@ -1,0 +1,28 @@
+name: Lint
+description: Runs Ruff to lint and format
+
+runs:
+  using: composite
+  steps:
+    - name: Check out repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
+
+    - name: Install dependencies with uv
+      shell: bash
+      run: uv pip install --system -r requirements.txt
+
+    - name: Dry-run formatter check
+      shell: bash
+      run: ruff format --check .
+
+    - name: Run linter
+      shell: bash
+      run: ruff check .
