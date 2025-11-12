@@ -40,4 +40,4 @@ jobs:
         working-directory: ./src/sync-planx-services
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python main.py
+        run: uv run main.py

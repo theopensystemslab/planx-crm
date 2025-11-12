@@ -136,9 +136,7 @@ def main_sync(notion):
         time.sleep(config.GENTLE_DELAY_SECONDS)
 
     for page_id, rel_ids in to_relink:
-        api.set_relation(
-            notion, page_id, config.PROP_SERVICE_CUSTOMER_REL, rel_ids
-        )
+        api.set_relation(notion, page_id, config.PROP_SERVICE_CUSTOMER_REL, rel_ids)
         time.sleep(config.GENTLE_DELAY_SECONDS)
 
     for page_id, prev_rel in to_archive:

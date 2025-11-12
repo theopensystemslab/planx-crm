@@ -4,9 +4,6 @@ description: Runs Ruff to lint and format
 runs:
   using: composite
   steps:
-    - name: Check out repository code
-      uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -21,8 +18,8 @@ runs:
 
     - name: Dry-run formatter check
       shell: bash
-      run: ruff format --check .
+      run: uv run ruff format --check .
 
     - name: Run linter
       shell: bash
-      run: ruff check .
+      run: uv run ruff check .
