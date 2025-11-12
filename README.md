@@ -30,7 +30,7 @@ This project uses [uv](https://github.com/astral-sh/uv) for package and environm
 
 4.  **Install dependencies:**
     ```bash
-    uv pip install -r requirements.txt
+    uv sync
     ```
 
 ---
