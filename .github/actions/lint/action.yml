@@ -13,13 +13,13 @@ runs:
       uses: astral-sh/setup-uv@v6
 
     - name: Install dependencies with uv
-      shell: bash -l {0}
+      shell: bash
       run: uv sync
 
     - name: Dry-run formatter check
-      shell: bash -l {0}
-      run: ruff format --check .
+      shell: bash
+      run: uv run ruff format --check .
 
     - name: Run linter
-      shell: bash -l {0}
-      run: ruff check .
+      shell: bash
+      run: uv run ruff check .
