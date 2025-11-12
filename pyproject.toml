@@ -1,0 +1,19 @@
+[project]
+name = "planx-crm"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "notion-client==2.5.0",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+    "ruff>=0.14.4",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F"]
+
+[tool.ruff.format]
+quote-style = "double"
