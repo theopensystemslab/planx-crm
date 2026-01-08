@@ -1,0 +1,43 @@
+name: Sync PlanX teams to Notion CRM
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  0 2 * * *
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      
+      - name: Run linter
+        uses: ./.github/actions/lint
+
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies with uv
+        run: uv sync
+
+      - name: Run the Notion sync script
+        working-directory: ./src/sync-planx-services
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: uv run main.py
