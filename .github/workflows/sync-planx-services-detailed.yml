@@ -1,4 +1,4 @@
-name: Sync PlanX teams to Notion CRM
+name: Sync PlanX teams to Notion CRM - With Usage Stats
 
 on:
   workflow_dispatch:
@@ -37,7 +37,8 @@ jobs:
         run: uv sync
 
       - name: Run the Notion sync script
-        working-directory: ./src/sync-planx-services
+        working-directory: ./src/sync-planx-services-detailed
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          METABASE_API_KEY: ${{ secrets.METABASE_API_KEY }}
         run: uv run main.py
