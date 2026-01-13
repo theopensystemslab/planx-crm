@@ -1,15 +1,13 @@
-import logging
 from dotenv import load_dotenv
-
 # Load .env FIRST (before importing sync_config or api_helpers)
 load_dotenv()
 
 import sync_config
 import api_helpers as api
+import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
-
 
 def main():
 
