@@ -13,6 +13,7 @@ from config import AppConfig
 # Generic HTTP helpers
 # ----------------------------
 
+
 def fetch_json(url: str, timeout_secs: int) -> Dict[str, Any]:
     if not url:
         raise ValueError("Missing URL.")
@@ -63,6 +64,7 @@ def request_with_retry(
 # Notion helpers
 # ----------------------------
 
+
 def build_notion_headers(config: AppConfig) -> Dict[str, str]:
     print("########### API_HELPER.PY RUNNING ###########")
     if not config.notion_token:
@@ -104,7 +106,9 @@ def query_all_database_pages(config: AppConfig, page_size: int = 100) -> List[di
     return pages
 
 
-def update_page_select_properties(config: AppConfig, page_id: str, updates: Dict[str, str]) -> None:
+def update_page_select_properties(
+    config: AppConfig, page_id: str, updates: Dict[str, str]
+) -> None:
     """
     updates: { property_name: select_option_name }
     """

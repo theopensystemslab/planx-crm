@@ -1,11 +1,5 @@
 from __future__ import annotations
-import os
-from typing import Any, Dict, List, Tuple
-import pandas as pd
-
 from dotenv import load_dotenv
-load_dotenv()
-
 from config import AppConfig, build_config, datasets, notion_dataset_props
 from api_helpers import (
     fetch_json,
@@ -15,10 +9,16 @@ from api_helpers import (
     update_page_select_properties,
 )
 
+import os
+from typing import Any, Dict, List, Tuple
+import pandas as pd
+
+load_dotenv()
 
 # ----------------------------
 # Datasette -> DataFrame
 # ----------------------------
+
 
 def datasette_json_to_dataframe(payload: Dict[str, Any]) -> pd.DataFrame:
     cols = payload.get("columns") or []
@@ -31,6 +31,7 @@ def datasette_json_to_dataframe(payload: Dict[str, Any]) -> pd.DataFrame:
 # ----------------------------
 # Status computation
 # ----------------------------
+
 
 def compute_dataset_statuses(config: AppConfig, df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -61,16 +62,23 @@ def compute_dataset_statuses(config: AppConfig, df: pd.DataFrame) -> pd.DataFram
     # Aggregate per org/dataset
     grouped = (
         df.groupby(["organisation", "dataset"], dropna=False)
-          .agg(
-              has_active=("is_active", "any"),
-              has_problem_active=("is_problem", lambda s: bool((s & df.loc[s.index, "is_active"]).any())),
-          )
-          .reset_index()
+        .agg(
+            has_active=("is_active", "any"),
+            has_problem_active=(
+                "is_problem",
+                lambda s: bool((s & df.loc[s.index, "is_active"]).any()),
+            ),
+        )
+        .reset_index()
     )
 
     def derive_status(row: pd.Series) -> str:
         if bool(row["has_active"]):
-            return config.status_needs_improving if bool(row["has_problem_active"]) else config.status_live
+            return (
+                config.status_needs_improving
+                if bool(row["has_problem_active"])
+                else config.status_live
+            )
         return config.status_expired
 
     grouped["status"] = grouped.apply(derive_status, axis=1)
@@ -90,17 +98,21 @@ def compute_dataset_statuses(config: AppConfig, df: pd.DataFrame) -> pd.DataFram
     status_long["status"] = status_long["status"].fillna(config.status_not_submitted)
     return status_long
 
+
 # ----------------------------
 # Dry Run helpers
 # ----------------------------
+
 
 def log_page_updates(ref: str, page_id: str, diffs: Dict[str, str]) -> None:
     pretty = ", ".join([f"{k} → {v}" for k, v in diffs.items()])
     print(f"[DRY RUN] ref={ref} page={page_id}: {pretty}")
 
+
 # ----------------------------
 # Mapping helpers
 # ----------------------------
+
 
 def organisation_to_reference_code(config: AppConfig, organisation: str) -> str:
     org = (organisation or "").strip()
@@ -111,7 +123,9 @@ def organisation_to_reference_code(config: AppConfig, organisation: str) -> str:
     return org
 
 
-def build_notion_updates_by_ref(config: AppConfig, status_long: pd.DataFrame) -> Dict[str, Dict[str, str]]:
+def build_notion_updates_by_ref(
+    config: AppConfig, status_long: pd.DataFrame
+) -> Dict[str, Dict[str, str]]:
     """
     { ref_code: { notion_property_name: status_string } }
     """
@@ -152,9 +166,12 @@ def compute_select_diffs(
 # Orchestration
 # ----------------------------
 
+
 def sync_notion_from_datasette(config: AppConfig) -> None:
     # 1) Datasette -> status map
-    payload = fetch_json(config.datasette_query_url, timeout_secs=config.request_timeout_secs)
+    payload = fetch_json(
+        config.datasette_query_url, timeout_secs=config.request_timeout_secs
+    )
     df = datasette_json_to_dataframe(payload)
     statuses = compute_dataset_statuses(config, df)
     updates_by_ref = build_notion_updates_by_ref(config, statuses)
@@ -193,14 +210,14 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
                     continue
 
                 if config.dry_run:
-                    log_page_updates(ref, page_id, diffs) 
+                    log_page_updates(ref, page_id, diffs)
                 else:
                     update_page_select_properties(config, page_id, diffs)
 
             else:
                 if config.dry_run:
                     # show everything we'd write (optionally only if it differs)
-                    log_page_updates(ref, page_id, desired) 
+                    log_page_updates(ref, page_id, desired)
                 else:
                     update_page_select_properties(config, page_id, desired)
 
@@ -220,7 +237,9 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
     print("✅ Finished")
     label = "Would update pages" if config.dry_run else "Updated pages"
     print(f"{label}: {updated_pages}")
-    print(f"Used Not Submitted fallback (ref not in datasette): {used_not_submitted_fallback}")
+    print(
+        f"Ref not in datasette: {used_not_submitted_fallback}"
+    )
     print(f"Skipped (missing Reference Code): {skipped_no_ref}")
     print(f"Skipped (no changes needed): {skipped_no_change}")
     if errors:
@@ -232,6 +251,7 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
 # ----------------------------
 # Entry point (Colab-friendly)
 # ----------------------------
+
 
 def main() -> None:
     notion_token = os.environ.get("NOTION_TOKEN")

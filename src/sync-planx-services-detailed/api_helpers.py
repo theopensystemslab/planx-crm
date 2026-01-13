@@ -25,10 +25,20 @@ def fetch_metabase_json() -> list[dict]:
     if not sync_config.METABASE_API_KEY:
         raise ValueError("METABASE_API_KEY env var not set.")
 
-    json_url = f"{sync_config.METABASE_URL.rstrip('/')}/api/card/{sync_config.CARD_ID}/query/json"
-    headers = {"x-api-key": sync_config.METABASE_API_KEY, "Content-Type": "application/json"}
 
-    r = requests.post(json_url, headers=headers, json={}, timeout=sync_config.TIMEOUT_SECONDS)
+    json_url = (
+        f"{sync_config.METABASE_URL.rstrip('/')}/api/card/"
+        f"{sync_config.CARD_ID}/query/json"
+        )
+    
+    headers = {
+        "x-api-key": sync_config.METABASE_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+    r = requests.post(
+        json_url, headers=headers, json={}, timeout=sync_config.TIMEOUT_SECONDS
+    )
     r.raise_for_status()
     return r.json()
 
@@ -42,14 +52,29 @@ def format_metabase_df(payload: list[dict]) -> pd.DataFrame:
     df = pd.DataFrame(payload)
 
     expected = {
-        "reference_code", "council_name", "team_slug", "flow_id", "service_name",
-        "service_slug", "usage", "first_online_at", "url"
+        "reference_code",
+        "council_name",
+        "team_slug",
+        "flow_id",
+        "service_name",
+        "service_slug",
+        "usage",
+        "first_online_at",
+        "url",
     }
     missing = expected - set(df.columns)
     if missing:
         raise ValueError(f"Metabase response missing columns: {sorted(missing)}")
 
-    for col in ["reference_code", "council_name", "team_slug", "flow_id", "service_name", "service_slug", "url"]:
+    for col in [
+        "reference_code",
+        "council_name",
+        "team_slug",
+        "flow_id",
+        "service_name",
+        "service_slug",
+        "url",
+    ]:
         df[col] = df[col].fillna("").astype(str).str.strip()
 
     df["usage"] = pd.to_numeric(df["usage"], errors="coerce").fillna(0).astype(int)
@@ -67,42 +92,6 @@ def fetch_metabase_df() -> pd.DataFrame:
     return format_metabase_df(payload)
 
 
-
-# def fetch_metabase_df() -> pd.DataFrame:
-#     """
-#     Returns a dataframe with columns:
-#       reference_code, council_name, team_slug, flow_id, service_name,
-#       service_slug, usage, first_online_at, url
-#     """
-#     if not sync_config.METABASE_API_KEY:
-#         raise ValueError("METABASE_API_KEY env var not set.")
-
-#     json_url = f"{sync_config.METABASE_URL.rstrip('/')}/api/card/{sync_config.CARD_ID}/query/json"
-#     headers = {"x-api-key": sync_config.METABASE_API_KEY, "Content-Type": "application/json"}
-
-#     r = requests.post(json_url, headers=headers, json={}, timeout=sync_config.TIMEOUT_SECONDS)
-#     r.raise_for_status()
-
-#     df = pd.DataFrame(r.json())
-
-#     expected = {
-#         "reference_code", "council_name", "team_slug", "flow_id", "service_name",
-#         "service_slug", "usage", "first_online_at", "url"
-#     }
-#     missing = expected - set(df.columns)
-#     if missing:
-#         raise ValueError(f"Metabase response missing columns: {sorted(missing)}")
-
-#     # Normalize text fields
-#     for col in ["reference_code", "council_name", "team_slug", "flow_id", "service_name", "service_slug", "url"]:
-#         df[col] = df[col].fillna("").astype(str).str.strip()
-
-#     # Normalize usage
-#     df["usage"] = pd.to_numeric(df["usage"], errors="coerce").fillna(0).astype(int)
-
-#     return df
-
-
 def add_usage_rank_per_council(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds df["usage_rank_council"] where 1 = highest usage within each reference_code.
@@ -116,8 +105,8 @@ def add_usage_rank_per_council(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["usage_rank_council"] = (
         df.groupby("reference_code")["usage"]
-          .rank(method="first", ascending=False)
-          .astype(int)
+        .rank(method="first", ascending=False)
+        .astype(int)
     )
     return df
 
@@ -186,7 +175,9 @@ def load_councils_by_ref_code(notion: Client) -> dict[str, dict]:
       { "CMD": {"page_id": "...", "name": "Camden"} }
     """
     if not sync_config.COUNCILS_DB_ID or sync_config.COUNCILS_DB_ID == "REPLACE_ME":
-        raise ValueError("COUNCILS_DB_ID not set (needed for reference-code reconciliation).")
+        raise ValueError(
+            "COUNCILS_DB_ID not set (needed for reference-code reconciliation)."
+        )
 
     by_ref: dict[str, dict] = {}
     for c in paginate_db(notion, sync_config.COUNCILS_DB_ID):
@@ -217,17 +208,27 @@ def load_services_by_flow_id(notion: Client) -> dict[str, dict]:
 
         cur = {
             "page_id": s["id"],
-            "reference_code": rich_text_val(p.get(sync_config.SVC_PROP_REFERENCE_CODE, {})) or "",
-            "council_name": rich_text_val(p.get(sync_config.SVC_PROP_COUNCIL_NAME, {})) or "",
-            "service_name": rich_text_val(p.get(sync_config.SVC_PROP_SERVICE_NAME, {})) or "",
+            "reference_code": rich_text_val(
+                p.get(sync_config.SVC_PROP_REFERENCE_CODE, {})
+            )
+            or "",
+            "council_name": rich_text_val(p.get(sync_config.SVC_PROP_COUNCIL_NAME, {}))
+            or "",
+            "service_name": rich_text_val(p.get(sync_config.SVC_PROP_SERVICE_NAME, {}))
+            or "",
             "usage": number_val(p.get(sync_config.SVC_PROP_USAGE, {})) or 0,
-            "first_online": date_val(p.get(sync_config.SVC_PROP_FIRST_ONLINE, {})) or "",
+            "first_online": date_val(p.get(sync_config.SVC_PROP_FIRST_ONLINE, {}))
+            or "",
             "url": url_val(p.get(sync_config.SVC_PROP_URL, {})) or "",
-            "council_rel_ids": set(relation_ids(p.get(sync_config.SVC_PROP_COUNCIL_REL, {}))),
+            "council_rel_ids": set(
+                relation_ids(p.get(sync_config.SVC_PROP_COUNCIL_REL, {}))
+            ),
         }
 
         if sync_config.ENABLE_USAGE_RANK:
-            cur["usage_rank_council"] = number_val(p.get(sync_config.SVC_PROP_USAGE_RANK, {})) or 0
+            cur["usage_rank_council"] = (
+                number_val(p.get(sync_config.SVC_PROP_USAGE_RANK, {})) or 0
+            )
 
         idx[flow_id] = cur
 
@@ -246,16 +247,22 @@ def build_service_props(row: dict, council_name_final: str) -> dict:
     props = {
         # TITLE
         sync_config.SVC_PROP_FLOW_ID: {"title": [{"text": {"content": flow_id}}]},
-
         # rich_text
-        sync_config.SVC_PROP_REFERENCE_CODE: {"rich_text": [{"text": {"content": ref}}]},
-        sync_config.SVC_PROP_SERVICE_NAME: {"rich_text": [{"text": {"content": svc_name}}]},
-        sync_config.SVC_PROP_COUNCIL_NAME: {"rich_text": [{"text": {"content": str(council_name_final or "")}}]},
-
+        sync_config.SVC_PROP_REFERENCE_CODE: {
+            "rich_text": [{"text": {"content": ref}}]
+        },
+        sync_config.SVC_PROP_SERVICE_NAME: {
+            "rich_text": [{"text": {"content": svc_name}}]
+        },
+        sync_config.SVC_PROP_COUNCIL_NAME: {
+            "rich_text": [{"text": {"content": str(council_name_final or "")}}]
+        },
         # number/url/date
         sync_config.SVC_PROP_USAGE: {"number": usage},
         sync_config.SVC_PROP_URL: {"url": url},
-        sync_config.SVC_PROP_FIRST_ONLINE: {"date": {"start": str(first_online)}} if first_online else {"date": None},
+        sync_config.SVC_PROP_FIRST_ONLINE: {"date": {"start": str(first_online)}}
+        if first_online
+        else {"date": None},
     }
 
     if sync_config.ENABLE_USAGE_RANK:
@@ -266,7 +273,9 @@ def build_service_props(row: dict, council_name_final: str) -> dict:
 
 
 def create_service_page(notion: Client, props: dict) -> dict:
-    return notion.pages.create(parent={"database_id": sync_config.SERVICES_DB_ID}, properties=props)
+    return notion.pages.create(
+        parent={"database_id": sync_config.SERVICES_DB_ID}, properties=props
+    )
 
 
 def update_page(notion: Client, page_id: str, props: dict) -> dict:
@@ -288,7 +297,10 @@ def gentle_sleep():
 def assert_prop_type(db: dict, prop_name: str, expected: str):
     actual = db["properties"][prop_name]["type"]
     if actual != expected:
-        raise ValueError(f"Notion schema mismatch: '{prop_name}' is '{actual}' but expected '{expected}'.")
+        raise ValueError(
+            f"Notion schema mismatch: '{prop_name}' is '{actual}' "
+            f"but expected '{expected}'."
+        )
 
 
 def validate_services_db_schema(notion: Client):

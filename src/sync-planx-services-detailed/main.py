@@ -1,16 +1,14 @@
-from dotenv import load_dotenv
-# Load .env FIRST (before importing sync_config or api_helpers)
-load_dotenv()
-
 import sync_config
 import api_helpers as api
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 log = logging.getLogger(__name__)
 
-def main():
 
+def main():
     # Safety: only ever write to Services DB, but we will READ Councils DB.
     if not sync_config.SERVICES_DB_ID or sync_config.SERVICES_DB_ID == "REPLACE_ME":
         raise ValueError("SERVICES_DB_ID not set.")
@@ -58,7 +56,9 @@ def main():
 
         council_page_id = council["page_id"] if council else None
         # For readability only; relation is the real reconciliation
-        council_name_final = (council["name"] if council else (row.get("council_name") or "")).strip()
+        council_name_final = (
+            council["name"] if council else (row.get("council_name") or "")
+        ).strip()
 
         desired_props = api.build_service_props(row, council_name_final)
 
@@ -70,20 +70,48 @@ def main():
             continue
 
         # Decide if update needed (avoid noisy updates)
-        desired_ref = desired_props[sync_config.SVC_PROP_REFERENCE_CODE]["rich_text"][0]["text"]["content"] if desired_props[sync_config.SVC_PROP_REFERENCE_CODE]["rich_text"] else ""
-        desired_svcname = desired_props[sync_config.SVC_PROP_SERVICE_NAME]["rich_text"][0]["text"]["content"] if desired_props[sync_config.SVC_PROP_SERVICE_NAME]["rich_text"] else ""
-        desired_council_name = desired_props[sync_config.SVC_PROP_COUNCIL_NAME]["rich_text"][0]["text"]["content"] if desired_props[sync_config.SVC_PROP_COUNCIL_NAME]["rich_text"] else ""
+        desired_ref = (
+            desired_props[sync_config.SVC_PROP_REFERENCE_CODE]["rich_text"][0]["text"][
+                "content"
+            ]
+            if desired_props[sync_config.SVC_PROP_REFERENCE_CODE]["rich_text"]
+            else ""
+        )
+        desired_svcname = (
+            desired_props[sync_config.SVC_PROP_SERVICE_NAME]["rich_text"][0]["text"][
+                "content"
+            ]
+            if desired_props[sync_config.SVC_PROP_SERVICE_NAME]["rich_text"]
+            else ""
+        )
+        desired_council_name = (
+            desired_props[sync_config.SVC_PROP_COUNCIL_NAME]["rich_text"][0]["text"][
+                "content"
+            ]
+            if desired_props[sync_config.SVC_PROP_COUNCIL_NAME]["rich_text"]
+            else ""
+        )
         desired_usage = desired_props[sync_config.SVC_PROP_USAGE]["number"]
         desired_url = desired_props[sync_config.SVC_PROP_URL]["url"]
-        desired_first_online = desired_props[sync_config.SVC_PROP_FIRST_ONLINE]["date"]["start"] if desired_props[sync_config.SVC_PROP_FIRST_ONLINE]["date"] else ""
+        desired_first_online = (
+            desired_props[sync_config.SVC_PROP_FIRST_ONLINE]["date"]["start"]
+            if desired_props[sync_config.SVC_PROP_FIRST_ONLINE]["date"]
+            else ""
+        )
 
         changed = False
-        if (cur["reference_code"] or "") != (desired_ref or ""): changed = True
-        if (cur["service_name"] or "") != (desired_svcname or ""): changed = True
-        if (cur["council_name"] or "") != (desired_council_name or ""): changed = True
-        if int(cur["usage"] or 0) != int(desired_usage or 0): changed = True
-        if (cur["url"] or "") != (desired_url or ""): changed = True
-        if (cur["first_online"] or "") != (desired_first_online or ""): changed = True
+        if (cur["reference_code"] or "") != (desired_ref or ""):
+            changed = True
+        if (cur["service_name"] or "") != (desired_svcname or ""):
+            changed = True
+        if (cur["council_name"] or "") != (desired_council_name or ""):
+            changed = True
+        if int(cur["usage"] or 0) != int(desired_usage or 0):
+            changed = True
+        if (cur["url"] or "") != (desired_url or ""):
+            changed = True
+        if (cur["first_online"] or "") != (desired_first_online or ""):
+            changed = True
 
         if sync_config.ENABLE_USAGE_RANK:
             desired_rank = desired_props[sync_config.SVC_PROP_USAGE_RANK]["number"]
@@ -98,14 +126,22 @@ def main():
         if cur["council_rel_ids"] != desired_rel:
             to_relate.append((cur["page_id"], list(desired_rel)))
 
-    log.info(f"Planned → create:{len(to_create)} update:{len(to_update)} relate:{len(to_relate)}")
+        log.info(
+            f"Planned -> create:{len(to_create)} update:{len(to_update)} "
+            f"relate:{len(to_relate)}"
+        )
 
     # Apply creates (Services DB only)
     for props, council_page_id in to_create:
         created = api.create_service_page(notion, props)
         api.gentle_sleep()
         if council_page_id:
-            api.set_relation(notion, created["id"], sync_config.SVC_PROP_COUNCIL_REL, [council_page_id])
+            api.set_relation(
+                notion,
+                created["id"],
+                sync_config.SVC_PROP_COUNCIL_REL,
+                [council_page_id],
+            )
             api.gentle_sleep()
 
     # Apply updates (Services DB only)
