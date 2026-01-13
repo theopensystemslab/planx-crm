@@ -256,7 +256,6 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
 def main() -> None:
     notion_token = os.environ.get("NOTION_TOKEN")
     print("########### MAIN.PY RUNNING ###########")
-    print("Notion_token: ", notion_token)
     config = build_config(notion_token=notion_token)
     sync_notion_from_datasette(config)
 

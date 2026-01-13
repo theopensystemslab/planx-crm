@@ -118,7 +118,7 @@ def build_config(notion_token: str) -> AppConfig:
         request_timeout_secs=60,
         ref_code_mode="CODE",
         only_update_if_changed=True,
-        dry_run=True,  # use this if you dont want to update notion pages
+        dry_run=False,  # use this if you dont want to update notion pages
     )
 
 
