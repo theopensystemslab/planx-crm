@@ -1,9 +1,8 @@
-# main.py
 from __future__ import annotations
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 import pandas as pd
-
+from dotenv import load_dotenv
 from config import AppConfig, build_config, datasets, notion_dataset_props
 from api_helpers import (
     fetch_json,
@@ -13,6 +12,7 @@ from api_helpers import (
     update_page_select_properties,
 )
 
+load_dotenv()
 
 # ----------------------------
 # Datasette -> DataFrame
@@ -191,14 +191,14 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
                     continue
 
                 if config.dry_run:
-                    log_page_updates(ref, page_id, diffs)   # ✅ NEW
+                    log_page_updates(ref, page_id, diffs) 
                 else:
                     update_page_select_properties(config, page_id, diffs)
 
             else:
                 if config.dry_run:
                     # show everything we'd write (optionally only if it differs)
-                    log_page_updates(ref, page_id, desired)  # ✅ NEW
+                    log_page_updates(ref, page_id, desired) 
                 else:
                     update_page_select_properties(config, page_id, desired)
 
@@ -232,8 +232,9 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
 # ----------------------------
 
 def main() -> None:
-    # notion_token = userdata.get("NOTION_TOKEN")  # secret_...
     notion_token = os.environ.get("NOTION_TOKEN")
+    print("########### MAIN.PY RUNNING ###########")
+    print("Notion_token: ", notion_token)
     config = build_config(notion_token=notion_token)
     sync_notion_from_datasette(config)
 

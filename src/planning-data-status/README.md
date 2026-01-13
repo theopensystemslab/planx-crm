@@ -1,80 +1,40 @@
-# PlanX CRM Sync
+# PlanX Dataset Status -> Notion Sync
 
-Scripts for syncing **PlanX service and dataset status data** into a **Notion CRM**.
-
-This project pulls performance data from the Planning Data Platform (via Datasette),
-derives a status per dataset per council, and updates corresponding select fields in
-a Notion database.
-
-It is designed to run:
-- locally (for development and dry runs)
-- via **GitHub Actions** (for scheduled or manual syncs)
+## Purpose
+This script syncs **dataset status** per council from the Planning Data Platform
+(via Datasette) into a **Notion CRM** database.
 
 ---
 
-## What this does
+## How It Works
 
-For each council recorded in Notion:
+### 1. Fetch data from Datasette
+- Queries the Planning Data Datasette endpoint for issue summaries
+- Filters to the dataset list defined in `config.py`
 
-- Fetches dataset issue summaries from Datasette
-- Computes a status per dataset:
-  - **Live**
-  - **Needs Improving**
-  - **Expired**
-  - **Not Submitted**
-- Maps those statuses to select properties in Notion
-- Updates **only properties that have changed**
+### 2. Compute dataset statuses
+For each council and dataset:
+- **Live** if any active rows exist and none have problem severities
+- **Needs Improving** if any active row has a problem severity
+- **Expired** if rows exist but none are active
+- **Not Submitted** if the council has no rows for that dataset
 
-If a council exists in Notion but not in Datasette, all datasets are marked
-**Not Submitted**.
-
----
-
-## Project structure
-
-```
-.
-├── src/
-│   └── sync-planx-services/
-│       ├── config.py        # Configuration & constants
-│       ├── api_helpers.py   # Datasette + Notion API helpers
-│       └── main.py          # Status logic + orchestration
-├── .github/
-│   └── workflows/           # GitHub Actions workflows
-├── .env.example
-├── pyproject.toml
-├── uv.lock
-└── README.md
-```
+### 3. Update Notion
+- Maps each dataset status to a select property in Notion
+- Only writes changes (idempotent updates)
+- Supports `dry_run` in `config.py` for safe testing
 
 ---
 
-## Requirements
+## Notion Schema Requirements
 
-- Python **3.9+**
-- A Notion integration token
-- Access to the target Notion database
-
-Python dependencies:
-- `pandas`
-- `requests`
-- `urllib3`
-
----
-
-## Notion setup
-
-Your Notion database must include the following.
-
-### Required property
-
-**Reference Code**
-- Type: `title` or `rich_text`
-- Used to match councils against Datasette organisations
+### Councils database
+| Property | Type | Purpose |
+|----------|------|---------|
+| **Reference Code** | Title or Rich text | Matches councils to Datasette organisations |
 
 ### Dataset select properties
-
-The following select properties must exist **with these exact names**:
+These select properties must exist with exact names and options:
 
 | Dataset slug | Notion property |
 |-------------|-----------------|
@@ -84,7 +44,7 @@ The following select properties must exist **with these exact names**:
 | tree-preservation-zone | Dataset - TPZ |
 | tree | Dataset - Trees |
 
-Each select property must include these options:
+Select options required for each:
 - `Live`
 - `Needs Improving`
 - `Expired`
@@ -92,114 +52,51 @@ Each select property must include these options:
 
 ---
 
-## Local development setup
+## Configuration
+Values are defined in `config.py` or via environment variables.
 
-### 1. Create and activate a virtual environment
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 2. Install dependencies
-
-```bash
-pip install pandas requests
-```
-
-> On macOS you may see a LibreSSL / urllib3 warning.  
-> This is safe locally and does **not** affect CI.
-
-### 3. Set environment variables
-
-Create a `.env` file or export manually:
-
-```bash
-export NOTION_API_TOKEN=secret_xxx
-```
-
-See `.env.example` for reference.
+| Variable | Description |
+|----------|-------------|
+| `NOTION_TOKEN` | Notion integration token (required at runtime) |
+| `notion_database_id` | Target Notion database ID (in `config.py`) |
+| `dataset_to_notion_prop` | Dataset -> Notion property mapping |
+| `dry_run` | If true, prints updates without writing |
 
 ---
 
-## Running locally
-
-From the `src/sync-planx-services` directory:
+## Run
+From repo root:
 
 ```bash
-python main.py
-```
-
-By default the script runs in **dry-run mode**:
-- No updates are sent to Notion
-- Changes are logged to the console
-
-Example output:
-
-```
-[DRY RUN] ref=CAMDEN Dataset - Trees → Live
+uv run src/planning-data-status/main.py
 ```
 
 ---
 
-## Dry run vs live mode
+## Runbook
+1. Ensure all councils have a **Reference Code** in Notion.
+2. Run with `dry_run=True` to inspect changes.
+3. Set `dry_run=False` and run again to write updates.
 
-In `config.py`:
+---
 
-```python
-dry_run = True
-```
-
-- `True` → log changes only
-- `False` → apply updates to Notion
-
-Always run once in dry-run mode before switching to live.
+## Expected Outcome
+| Database | Result |
+|----------|--------|
+| **Councils DB** | Dataset status selects stay current per council. |
 
 ---
 
 ## GitHub Actions
-
-This repo is intended to run in CI.
-
-### Required secret
-
-You must define the following **GitHub Actions secret**:
+The workflow reads the Notion token from repo or org secrets:
 
 ```
-NOTION_API_TOKEN
+NOTION_TOKEN
 ```
-
-Where it lives:
-- Repository-level or organisation-level Actions secret
-- Added by a repo or org **Admin**
-
-Secrets are **not visible** to non-admin users.
 
 ---
 
-## Common issues
-
-### I can’t see “Settings” in GitHub
-You do not have Admin permissions on the repository.  
-Ask an admin to add the secret.
-
-### `Import "pandas" could not be resolved`
-VS Code is not using your virtual environment.  
-Select `.venv/bin/python` as the interpreter.
-
-### LibreSSL / urllib3 warning on macOS
-Safe to ignore locally, or pin:
-
-```bash
-pip install "urllib3<2"
-```
-
-CI runs on Linux with OpenSSL and will not show this warning.
-
----
-
-## Design principles
-
+## Design Principles
 - **Idempotent**: re-running produces the same result
 - **Safe by default**: dry-run + diffing enabled
 - **Explicit mapping**: no implicit inference
@@ -207,12 +104,5 @@ CI runs on Linux with OpenSSL and will not show this warning.
 
 ---
 
-## License
-
-MPL-2.0
-
----
-
 ## Maintainers
-
-Open Systems Lab – PlanX team
+Open Systems Lab - PlanX team
