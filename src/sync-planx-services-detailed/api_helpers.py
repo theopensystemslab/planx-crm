@@ -16,9 +16,9 @@ def notion_client() -> Client:
 
 
 # ───────────────────────── Metabase ──────────────────────────────
-def fetch_metabase_df() -> pd.DataFrame:
+def fetch_metabase_json() -> list[dict]:
     """
-    Returns a dataframe with columns:
+    Returns a json payload with entries like:
       reference_code, council_name, team_slug, flow_id, service_name,
       service_slug, usage, first_online_at, url
     """
@@ -30,8 +30,16 @@ def fetch_metabase_df() -> pd.DataFrame:
 
     r = requests.post(json_url, headers=headers, json={}, timeout=sync_config.TIMEOUT_SECONDS)
     r.raise_for_status()
+    return r.json()
 
-    df = pd.DataFrame(r.json())
+
+def format_metabase_df(payload: list[dict]) -> pd.DataFrame:
+    """
+    Returns a dataframe with columns:
+      reference_code, council_name, team_slug, flow_id, service_name,
+      service_slug, usage, first_online_at, url
+    """
+    df = pd.DataFrame(payload)
 
     expected = {
         "reference_code", "council_name", "team_slug", "flow_id", "service_name",
@@ -41,14 +49,58 @@ def fetch_metabase_df() -> pd.DataFrame:
     if missing:
         raise ValueError(f"Metabase response missing columns: {sorted(missing)}")
 
-    # Normalize text fields
     for col in ["reference_code", "council_name", "team_slug", "flow_id", "service_name", "service_slug", "url"]:
         df[col] = df[col].fillna("").astype(str).str.strip()
 
-    # Normalize usage
     df["usage"] = pd.to_numeric(df["usage"], errors="coerce").fillna(0).astype(int)
-
     return df
+
+
+def fetch_metabase_df() -> pd.DataFrame:
+    """
+    Wrapper around fetch_metabase_json + format_metabase_df.
+    Returns a dataframe with columns:
+      reference_code, council_name, team_slug, flow_id, service_name,
+      service_slug, usage, first_online_at, url
+    """
+    payload = fetch_metabase_json()
+    return format_metabase_df(payload)
+
+
+
+# def fetch_metabase_df() -> pd.DataFrame:
+#     """
+#     Returns a dataframe with columns:
+#       reference_code, council_name, team_slug, flow_id, service_name,
+#       service_slug, usage, first_online_at, url
+#     """
+#     if not sync_config.METABASE_API_KEY:
+#         raise ValueError("METABASE_API_KEY env var not set.")
+
+#     json_url = f"{sync_config.METABASE_URL.rstrip('/')}/api/card/{sync_config.CARD_ID}/query/json"
+#     headers = {"x-api-key": sync_config.METABASE_API_KEY, "Content-Type": "application/json"}
+
+#     r = requests.post(json_url, headers=headers, json={}, timeout=sync_config.TIMEOUT_SECONDS)
+#     r.raise_for_status()
+
+#     df = pd.DataFrame(r.json())
+
+#     expected = {
+#         "reference_code", "council_name", "team_slug", "flow_id", "service_name",
+#         "service_slug", "usage", "first_online_at", "url"
+#     }
+#     missing = expected - set(df.columns)
+#     if missing:
+#         raise ValueError(f"Metabase response missing columns: {sorted(missing)}")
+
+#     # Normalize text fields
+#     for col in ["reference_code", "council_name", "team_slug", "flow_id", "service_name", "service_slug", "url"]:
+#         df[col] = df[col].fillna("").astype(str).str.strip()
+
+#     # Normalize usage
+#     df["usage"] = pd.to_numeric(df["usage"], errors="coerce").fillna(0).astype(int)
+
+#     return df
 
 
 def add_usage_rank_per_council(df: pd.DataFrame) -> pd.DataFrame:

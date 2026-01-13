@@ -2,7 +2,10 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Tuple
 import pandas as pd
+
 from dotenv import load_dotenv
+load_dotenv()
+
 from config import AppConfig, build_config, datasets, notion_dataset_props
 from api_helpers import (
     fetch_json,
@@ -12,7 +15,6 @@ from api_helpers import (
     update_page_select_properties,
 )
 
-load_dotenv()
 
 # ----------------------------
 # Datasette -> DataFrame

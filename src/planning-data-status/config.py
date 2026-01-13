@@ -46,6 +46,9 @@ def build_config(notion_token: str) -> AppConfig:
     Construct configuration for the app.
     Pass NOTION_TOKEN in from GHA Secrets.
     """
+
+    print("########### CONFIG.PY RUNNING ###########")
+
     BASE_URL = "https://datasette.planning.data.gov.uk/performance.json"
 
     sql_query = """
