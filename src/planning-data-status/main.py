@@ -109,6 +109,11 @@ def log_page_updates(ref: str, page_id: str, diffs: Dict[str, str]) -> None:
     print(f"[DRY RUN] ref={ref} page={page_id}: {pretty}")
 
 
+def log_page_updates_live(ref: str, page_id: str, diffs: Dict[str, str]) -> None:
+    pretty = ", ".join([f"{k} → {v}" for k, v in diffs.items()])
+    print(f"[UPDATE] ref={ref} page={page_id}: {pretty}")
+
+
 # ----------------------------
 # Mapping helpers
 # ----------------------------
@@ -185,6 +190,9 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
     skipped_no_change = 0
     used_not_submitted_fallback = 0
     errors: List[Tuple[str, str]] = []
+    updated_logs: List[str] = []
+    fallback_logs: List[str] = []
+    skipped_logs: List[str] = []
 
     not_submitted = build_all_not_submitted_payload(config)
 
@@ -194,31 +202,61 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
             props = page.get("properties") or {}
 
             ref = read_text_or_title(props, config.notion_ref_code_prop)
+            council_name = read_text_or_title(props, config.notion_council_name_prop) or ""
             if not ref:
                 skipped_no_ref += 1
+                if config.verbose_logs:
+                    name_part = f" council={council_name}" if council_name else ""
+                    skipped_logs.append(
+                        f"[SKIP] {name_part.strip()} -> missing reference code"
+                    )
                 continue
 
             desired = updates_by_ref.get(ref)
             if desired is None:
                 desired = not_submitted
                 used_not_submitted_fallback += 1
+                if config.verbose_logs:
+                    fallback_logs.append(
+                        f"[FALLBACK] ref={ref} council={council_name} "
+                        "not in dataset -> using Not Submitted"
+                    )
 
             if config.only_update_if_changed:
                 diffs = compute_select_diffs(props, desired)
                 if not diffs:
                     skipped_no_change += 1
+                    if config.verbose_logs:
+                        skipped_logs.append(
+                            f"[SKIP] ref={ref} council={council_name} "
+                            "-> no changes needed"
+                        )
                     continue
 
                 if config.dry_run:
-                    log_page_updates(ref, page_id, diffs)
+                    log_page_updates(ref, page_id, diffs) 
                 else:
+                    if config.verbose_logs:
+                        pretty = "\n".join(
+                            [f"- {k} -> {v}" for k, v in diffs.items()]
+                        )
+                        updated_logs.append(
+                            f"[UPDATE] ref={ref} council={council_name}\n{pretty}"
+                        )
                     update_page_select_properties(config, page_id, diffs)
 
             else:
                 if config.dry_run:
                     # show everything we'd write (optionally only if it differs)
-                    log_page_updates(ref, page_id, desired)
+                    log_page_updates(ref, page_id, desired) 
                 else:
+                    if config.verbose_logs:
+                        pretty = "\n".join(
+                            [f"- {k} -> {v}" for k, v in desired.items()]
+                        )
+                        updated_logs.append(
+                            f"[UPDATE] ref={ref} council={council_name}\n{pretty}"
+                        )
                     update_page_select_properties(config, page_id, desired)
 
             updated_pages += 1
@@ -234,12 +272,26 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
         except Exception as e:
             errors.append((page.get("id", "unknown"), str(e)))
 
+    if config.verbose_logs:
+        if updated_logs:
+            print("\n[UPDATED PAGES]")
+            for line in updated_logs:
+                print(line)
+        if fallback_logs:
+            print("\n[FALLBACKS]")
+            for line in fallback_logs:
+                print(line)
+        if skipped_logs:
+            print("\n[SKIPPED]")
+            for line in skipped_logs:
+                print(line)
+
+    print("\n[SUMMARY]")
+    print(f"Loaded Notion pages: {len(pages)}")
     print("✅ Finished")
     label = "Would update pages" if config.dry_run else "Updated pages"
     print(f"{label}: {updated_pages}")
-    print(
-        f"Ref not in datasette: {used_not_submitted_fallback}"
-    )
+    print(f"Ref not in datasette: {used_not_submitted_fallback}")
     print(f"Skipped (missing Reference Code): {skipped_no_ref}")
     print(f"Skipped (no changes needed): {skipped_no_change}")
     if errors:
@@ -255,7 +307,6 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
 
 def main() -> None:
     notion_token = os.environ.get("NOTION_TOKEN")
-    print("########### MAIN.PY RUNNING ###########")
     config = build_config(notion_token=notion_token)
     sync_notion_from_datasette(config)
 

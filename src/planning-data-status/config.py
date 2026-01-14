@@ -19,6 +19,7 @@ class AppConfig:
     notion_token: str
     notion_database_id: str
     notion_ref_code_prop: str
+    notion_council_name_prop: str
     notion_version: str
     notion_base_url: str
 
@@ -39,6 +40,7 @@ class AppConfig:
     ref_code_mode: str  # "CODE" | "FULL"
     only_update_if_changed: bool
     dry_run: bool  # If true, do not perform updates
+    verbose_logs: bool  # If true, log per-page details
 
 
 def build_config(notion_token: str) -> AppConfig:
@@ -46,8 +48,6 @@ def build_config(notion_token: str) -> AppConfig:
     Construct configuration for the app.
     Pass NOTION_TOKEN in from GHA Secrets.
     """
-
-    print("########### CONFIG.PY RUNNING ###########")
 
     BASE_URL = "https://datasette.planning.data.gov.uk/performance.json"
 
@@ -107,6 +107,7 @@ def build_config(notion_token: str) -> AppConfig:
         notion_token=notion_token,
         notion_database_id="27c35d469ad180aaacf4d8beb0ddb20c",
         notion_ref_code_prop="Reference Code",
+        notion_council_name_prop="Council Name",
         notion_version="2022-06-28",
         notion_base_url="https://api.notion.com/v1",
         dataset_to_notion_prop=dataset_to_notion_prop,
@@ -119,6 +120,7 @@ def build_config(notion_token: str) -> AppConfig:
         ref_code_mode="CODE",
         only_update_if_changed=True,
         dry_run=False,  # use this if you dont want to update notion pages
+        verbose_logs=True,
     )
 
 

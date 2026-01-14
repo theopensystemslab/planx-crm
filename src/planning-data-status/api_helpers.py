@@ -66,7 +66,6 @@ def request_with_retry(
 
 
 def build_notion_headers(config: AppConfig) -> Dict[str, str]:
-    print("########### API_HELPER.PY RUNNING ###########")
     if not config.notion_token:
         raise ValueError("Missing Notion token.")
     return {
