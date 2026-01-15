@@ -3,7 +3,7 @@ name: Sync PlanX teams to Notion CRM
 on:
   workflow_dispatch:
   schedule:
-    - cron:  0 2 * * *
+    - cron:  45 2 * * *
 
 permissions:
   contents: read

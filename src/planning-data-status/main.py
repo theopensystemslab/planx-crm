@@ -202,7 +202,9 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
             props = page.get("properties") or {}
 
             ref = read_text_or_title(props, config.notion_ref_code_prop)
-            council_name = read_text_or_title(props, config.notion_council_name_prop) or ""
+            council_name = (
+                read_text_or_title(props, config.notion_council_name_prop) or ""
+            )
             if not ref:
                 skipped_no_ref += 1
                 if config.verbose_logs:
@@ -234,12 +236,10 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
                     continue
 
                 if config.dry_run:
-                    log_page_updates(ref, page_id, diffs) 
+                    log_page_updates(ref, page_id, diffs)
                 else:
                     if config.verbose_logs:
-                        pretty = "\n".join(
-                            [f"- {k} -> {v}" for k, v in diffs.items()]
-                        )
+                        pretty = "\n".join([f"- {k} -> {v}" for k, v in diffs.items()])
                         updated_logs.append(
                             f"[UPDATE] ref={ref} council={council_name}\n{pretty}"
                         )
@@ -248,7 +248,7 @@ def sync_notion_from_datasette(config: AppConfig) -> None:
             else:
                 if config.dry_run:
                     # show everything we'd write (optionally only if it differs)
-                    log_page_updates(ref, page_id, desired) 
+                    log_page_updates(ref, page_id, desired)
                 else:
                     if config.verbose_logs:
                         pretty = "\n".join(
