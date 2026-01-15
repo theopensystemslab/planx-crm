@@ -1,4 +1,4 @@
-name: Sync PlanX teams to Notion CRM
+name: Sync Planning Data Status to Notion CRM
 
 on:
   workflow_dispatch:
