@@ -1,9 +1,9 @@
-name: Sync Planning Data Status to Notion CRM
+name: CRM Sync - Planning Data
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  0 2 * * *
+    - cron:  30 2 * * *
 
 permissions:
   contents: read

@@ -1,4 +1,4 @@
-name: Sync PlanX teams to Notion CRM - With Usage Stats
+name: CRM Sync - Service Usage
 
 on:
   workflow_dispatch:
