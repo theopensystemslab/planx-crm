@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+
 # Load .env FIRST (before importing sync_config or api_helpers)
 load_dotenv()
 

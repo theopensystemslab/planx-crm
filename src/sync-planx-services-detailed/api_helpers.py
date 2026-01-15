@@ -25,12 +25,11 @@ def fetch_metabase_json() -> list[dict]:
     if not sync_config.METABASE_API_KEY:
         raise ValueError("METABASE_API_KEY env var not set.")
 
-
     json_url = (
         f"{sync_config.METABASE_URL.rstrip('/')}/api/card/"
         f"{sync_config.CARD_ID}/query/json"
-        )
-    
+    )
+
     headers = {
         "x-api-key": sync_config.METABASE_API_KEY,
         "Content-Type": "application/json",
