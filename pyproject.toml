@@ -5,6 +5,7 @@ requires-python = ">=3.11"
 dependencies = [
     "notion-client==2.5.0",
     "python-dotenv>=1.2.1",
+    "pandas>=2.2.0",
     "requests>=2.32.5",
     "ruff>=0.14.4",
 ]

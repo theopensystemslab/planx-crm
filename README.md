@@ -71,3 +71,37 @@ Once you've activated the virtual environment and installed the necessary depend
 ```bash
 uv run src/sync-planx-services/main.py
 ```
+
+---
+
+### `sync-planx-services-detailed`
+
+#### What it does
+Syncs service-level data from a Metabase card into the "Live Services - Detailed" Notion database and links each service to its council via Reference Code.
+
+#### How it runs
+This script is intended for scheduled or manual runs (see `src/sync-planx-services-detailed/README.md` for details).
+
+#### Local development
+Requires `NOTION_TOKEN` and `METABASE_API_KEY` in `.env` or your shell.
+
+```bash
+uv run src/sync-planx-services-detailed/main.py
+```
+
+---
+
+### `planning-data-status`
+
+#### What it does
+Pulls dataset issue summaries from the Planning Data Platform and writes dataset status selects into the Councils Notion database.
+
+#### How it runs
+This script is intended for scheduled or manual runs (see `src/planning-data-status/README.md` for details).
+
+#### Local development
+Requires `NOTION_TOKEN` in `.env` or your shell.
+
+```bash
+uv run src/planning-data-status/main.py
+```
