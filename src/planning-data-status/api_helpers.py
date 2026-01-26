@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import time
 from typing import Any, Dict, List, Optional
-
 import requests
 
 from config import AppConfig
@@ -17,7 +16,7 @@ from config import AppConfig
 def fetch_json(url: str, timeout_secs: int) -> Dict[str, Any]:
     if not url:
         raise ValueError("Missing URL.")
-    resp = requests.get(url, timeout=timeout_secs)
+    resp = request_with_retry("GET", url, timeout_secs=timeout_secs)
     resp.raise_for_status()
     return resp.json()
 
@@ -25,8 +24,8 @@ def fetch_json(url: str, timeout_secs: int) -> Dict[str, Any]:
 def request_with_retry(
     method: str,
     url: str,
-    headers: Dict[str, str],
     timeout_secs: int,
+    headers: Optional[Dict[str, str]] = None,
     json_body: Optional[dict] = None,
     max_attempts: int = 7,
 ) -> requests.Response:
