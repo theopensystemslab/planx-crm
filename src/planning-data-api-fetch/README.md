@@ -10,11 +10,11 @@ in the Notion **Councils** database.
 ## Datasets & Notion Fields
 | Dataset | Notion checkbox |
 |---------|-----------------|
-| article-4-direction | PD-A4 |
-| conservation-area | PD-CNSV |
-| listed-building-outline | PD-LBO |
-| tree | PD-TREE |
-| tree-preservation-zone | PD-TPZ |
+| article-4-direction | PD-Article4 |
+| conservation-area | PD-ConservationArea|
+| listed-building-outline | PD-ListedBuildingOutline |
+| tree | PD-Trees |
+| tree-preservation-zone | PD-TreePreservationZone |
 
 ---
 
