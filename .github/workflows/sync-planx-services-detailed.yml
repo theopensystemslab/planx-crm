@@ -3,7 +3,7 @@ name: CRM Sync - Service Usage
 on:
   workflow_dispatch:
   schedule:
-    - cron:  0 2 * * *
+    - cron:  45 2 * * *
 
 permissions:
   contents: read

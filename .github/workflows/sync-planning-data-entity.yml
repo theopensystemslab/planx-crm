@@ -1,9 +1,9 @@
-name: CRM Sync - Planning Data
+name: CRM Sync - Planning Data Entity Sync
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  30 2 * * *
+    - cron:  00 2 * * *
 
 permissions:
   contents: read
@@ -37,7 +37,7 @@ jobs:
         run: uv sync
 
       - name: Run the Planning Data Sync script
-        working-directory: ./src/planning-data-status
+        working-directory: ./src/planning-data-entity-sync
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: uv run main.py

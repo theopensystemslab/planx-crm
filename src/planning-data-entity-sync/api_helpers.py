@@ -1,8 +1,8 @@
-# api_helpers.py
 from __future__ import annotations
 
 import time
 from typing import Any, Dict, List, Optional
+
 import requests
 
 from config import AppConfig
@@ -104,19 +104,19 @@ def query_all_database_pages(config: AppConfig, page_size: int = 100) -> List[di
     return pages
 
 
-def update_page_select_properties(
-    config: AppConfig, page_id: str, updates: Dict[str, str]
+def update_page_text_property(
+    config: AppConfig, page_id: str, prop_name: str, value: str
 ) -> None:
     """
-    updates: { property_name: select_option_name }
+    Updates a rich_text property to the given string value.
     """
-    if not updates:
+    if value is None:
         return
 
     url = f"{config.notion_base_url}/pages/{page_id}"
     headers = build_notion_headers(config)
 
-    properties_payload = {k: {"select": {"name": v}} for k, v in updates.items()}
+    properties_payload = {prop_name: {"rich_text": [{"text": {"content": value}}]}}
     resp = request_with_retry(
         "PATCH",
         url,
@@ -127,12 +127,49 @@ def update_page_select_properties(
     resp.raise_for_status()
 
 
-def read_select_name(page_properties: dict, prop_name: str) -> Optional[str]:
-    prop = page_properties.get(prop_name)
-    if not prop or prop.get("type") != "select":
-        return None
-    sel = prop.get("select")
-    return sel.get("name") if sel else None
+def create_council_page(
+    config: AppConfig,
+    title_prop_name: str,
+    council_name: str,
+    reference_code: str,
+    pd_entity: str,
+) -> None:
+    url = f"{config.notion_base_url}/pages"
+    headers = build_notion_headers(config)
+
+    title_value = (
+        reference_code if title_prop_name == config.notion_ref_code_prop else council_name
+    )
+    title_value = title_value or council_name or reference_code
+    properties_payload = {
+        title_prop_name: {"title": [{"text": {"content": title_value}}]},
+        config.notion_pd_entity_prop: {"rich_text": [{"text": {"content": pd_entity}}]},
+        config.notion_customer_status_prop: {
+            "select": {"name": config.notion_customer_status_new_value}
+        },
+    }
+
+    if config.notion_council_name_prop != title_prop_name:
+        properties_payload[config.notion_council_name_prop] = {
+            "rich_text": [{"text": {"content": council_name}}]
+        }
+
+    if config.notion_ref_code_prop != title_prop_name:
+        properties_payload[config.notion_ref_code_prop] = {
+            "rich_text": [{"text": {"content": reference_code}}]
+        }
+
+    resp = request_with_retry(
+        "POST",
+        url,
+        headers=headers,
+        timeout_secs=config.request_timeout_secs,
+        json_body={
+            "parent": {"database_id": config.notion_database_id},
+            "properties": properties_payload,
+        },
+    )
+    resp.raise_for_status()
 
 
 def read_text_or_title(page_properties: dict, prop_name: str) -> Optional[str]:
