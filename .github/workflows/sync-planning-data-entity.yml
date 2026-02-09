@@ -2,6 +2,11 @@ name: CRM Sync - Planning Data Entity Sync
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "If true, run without writing to Notion"
+        required: false
+        default: "false"
   schedule:
     - cron:  00 2 * * *
 
@@ -40,4 +45,5 @@ jobs:
         working-directory: ./src/planning-data-entity-sync
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: uv run main.py

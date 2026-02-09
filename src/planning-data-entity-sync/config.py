@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,13 @@ def build_config(notion_token: str) -> AppConfig:
         "field=name&limit=500"
     )
 
+    dry_run_env = os.environ.get("DRY_RUN")
+    dry_run = (
+        dry_run_env.strip().lower() in {"1", "true", "yes", "y", "on"}
+        if dry_run_env is not None
+        else False
+    )
+
     return AppConfig(
         planning_data_url=planning_data_url,
         notion_token=notion_token,
@@ -56,6 +64,6 @@ def build_config(notion_token: str) -> AppConfig:
         notion_base_url="https://api.notion.com/v1",
         request_timeout_secs=60,
         only_update_if_changed=True,
-        dry_run=False,
+        dry_run=dry_run,
         verbose_logs=True,
     )

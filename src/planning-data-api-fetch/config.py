@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from typing import Dict
 
 
@@ -34,6 +35,12 @@ class AppConfig:
 
 
 def build_config(notion_token: str) -> AppConfig:
+    dry_run_env = os.environ.get("DRY_RUN")
+    dry_run = (
+        dry_run_env.strip().lower() in {"1", "true", "yes", "y", "on"}
+        if dry_run_env is not None
+        else False
+    )
     dataset_to_notion_prop = {
         "article-4-direction-area": "PD-Article4",
         "conservation-area": "PD-ConservationArea",
@@ -61,6 +68,6 @@ def build_config(notion_token: str) -> AppConfig:
         notion_base_url="https://api.notion.com/v1",
         request_timeout_secs=60,
         only_update_if_changed=True,
-        dry_run=False,
+        dry_run=dry_run,
         verbose_logs=True,
     )
