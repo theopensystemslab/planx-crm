@@ -138,7 +138,9 @@ def create_council_page(
     headers = build_notion_headers(config)
 
     title_value = (
-        reference_code if title_prop_name == config.notion_ref_code_prop else council_name
+        reference_code
+        if title_prop_name == config.notion_ref_code_prop
+        else council_name
     )
     title_value = title_value or council_name or reference_code
     properties_payload = {
