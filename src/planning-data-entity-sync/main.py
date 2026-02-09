@@ -100,8 +100,7 @@ def log_page_updates(ref: str, page_id: str, new_value: str) -> None:
 
 def log_new_page(ref: str, council_name: str, pd_entity: str) -> None:
     print(
-        "[DRY RUN] create page: "
-        f"ref={ref} council={council_name} PD Entity={pd_entity}"
+        f"[DRY RUN] create page: ref={ref} council={council_name} PD Entity={pd_entity}"
     )
 
 
