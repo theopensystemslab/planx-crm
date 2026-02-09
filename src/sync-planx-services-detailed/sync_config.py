@@ -7,7 +7,7 @@ load_dotenv()
 # ───────────────────────── Metabase ─────────────────────────
 METABASE_URL = "https://metabase.editor.planx.uk"
 METABASE_API_KEY = os.environ.get("METABASE_API_KEY")
-CARD_ID = 1220
+CARD_ID = 1239
 TIMEOUT_SECONDS = 60
 
 # ───────────────────────── Notion ───────────────────────────
